@@ -2,6 +2,7 @@ import { createServer, Model } from "miragejs";
 import { belongsTo } from "miragejs";
 import { hasMany } from "miragejs";
 import { RestSerializer } from "miragejs";
+import { Factory, trait } from "miragejs";
 
 export default function () {
   createServer({
@@ -22,16 +23,42 @@ export default function () {
       }),
     },
 
+    factories: {
+      list: Factory.extend({
+        name(i) {
+          return `List ${i}`;
+        },
+
+        withReminders: trait({
+          afterCreate(list, server) {
+            server.createList("reminder", 5, { list });
+          },
+        }),
+      }),
+
+      reminder: Factory.extend({
+        text(i) {
+          return `Reminder ${i}`;
+        },
+      }),
+    },
+
     seeds(server) {
       server.create("reminder", { text: "Walk the dog" });
       server.create("reminder", { text: "Take out the trash" });
       server.create("reminder", { text: "Work out" });
 
-      let homeList = server.create("list", { name: "Home" });
-      server.create("reminder", { list: homeList, text: "Do taxes" });
+      server.create("list", {
+        name: "Home",
+        reminders: [server.create("reminder", { text: "Do taxes" })],
+      });
 
-      let workList = server.create("list", { name: "Work" });
-      server.create("reminder", { list: workList, text: "Visit bank" });
+      server.create("list", {
+        name: "Work",
+        reminders: [server.create("reminder", { text: "Visit bank" })],
+      });
+
+      server.create("list", "withReminders");
     },
 
     routes() {
